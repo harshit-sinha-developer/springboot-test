@@ -1,11 +1,15 @@
 package com.example.dependencyInjection.controllers;
 
 import com.example.dependencyInjection.model.Book;
+import com.example.dependencyInjection.repository.BookRepository;
 import com.example.dependencyInjection.service.BookService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 @RestController
 @RequestMapping(path = {"/book/"})
@@ -13,19 +17,34 @@ public class BookController {
     @Autowired
     private BookService bookService;
 
+    @Autowired
+    private BookRepository bookRepository;
+
     @GetMapping("{bookId}")
-    public Book getBook(@PathVariable Long bookId) {
-        return bookService.findById(bookId);
+    public Book getBook(@PathVariable Long bookId, HttpServletResponse response) {
+        Optional<Book> optionalBook = bookRepository.findById(bookId);
+
+        if(optionalBook.isEmpty()) {
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            return null;
+        }
+
+        return optionalBook.get();
     }
 
     @GetMapping("/")
     public ArrayList<Book> getBooks() {
-        return new ArrayList<>();
+        ArrayList<Book> books = new ArrayList<>();
+        for(Book book: bookRepository.findAll()) {
+            books.add(book);
+        }
+        return books;
     }
 
     @PostMapping("/")
     public Book createBook(@RequestBody Book bookRequest) {
-        return new Book();
+        Book book = new Book(bookRequest.getTitle(), bookRequest.getPrice(), bookRequest.getGenre());
+        return bookRepository.save(book);
     }
 
     @DeleteMapping("{bookId}")
@@ -33,8 +52,29 @@ public class BookController {
 
     }
 
-    @RequestMapping(method = {RequestMethod.PATCH, RequestMethod.PUT})
-    public void updateBook(@PathVariable Long bookId, @RequestBody Book bookRequest) {
+    @RequestMapping(method = {RequestMethod.PATCH, RequestMethod.PUT}, path = "{bookId}")
+    public void updateBook(@PathVariable Long bookId, @RequestBody Book bookRequest, HttpServletResponse response) {
+        Optional<Book> optionalBook = bookRepository.findById(bookId);
 
+        if(optionalBook.isEmpty()) {
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            return;
+        }
+
+        Book book = optionalBook.get();
+        if(bookRequest.getPrice() != null) {
+            book.setPrice(bookRequest.getPrice());
+        }
+
+        if(bookRequest.getTitle() != null) {
+            book.setTitle(bookRequest.getTitle());
+        }
+
+        if(bookRequest.getGenre() != null) {
+            book.setGenre(bookRequest.getGenre());
+        }
+
+        bookRepository.save(book);
+        response.setStatus(HttpStatus.NO_CONTENT.value());
     }
 }

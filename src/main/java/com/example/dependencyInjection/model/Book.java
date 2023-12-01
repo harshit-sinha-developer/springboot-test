@@ -1,8 +1,14 @@
 package com.example.dependencyInjection.model;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
+@Entity(name = "books")
 public class Book {
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     private String title;
     private Float price;
@@ -16,6 +22,12 @@ public class Book {
     }
 
     public Book() {
+    }
+
+    public Book(String title, Float price, String genre) {
+        this.title = title;
+        this.price = price;
+        this.genre = genre;
     }
 
     public Long getId() {
