@@ -6,9 +6,11 @@ import com.example.dependencyInjection.service.BookService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -33,8 +35,13 @@ public class BookController {
     }
 
     @GetMapping("/")
-    public ArrayList<Book> getBooks() {
-        ArrayList<Book> books = new ArrayList<>();
+    public List<Book> getBooks(@RequestParam @Nullable String genre) {
+            ArrayList<Book> books = new ArrayList<>();
+
+        if(genre != null) {
+            return bookRepository.findAllByGenre(genre);
+        }
+
         for(Book book: bookRepository.findAll()) {
             books.add(book);
         }
