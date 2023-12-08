@@ -1,6 +1,8 @@
 package com.example.dependencyInjection.controllers;
 
 import com.example.dependencyInjection.model.Book;
+import com.example.dependencyInjection.model.BookInventory;
+import com.example.dependencyInjection.repository.BookInventoryRepository;
 import com.example.dependencyInjection.repository.BookRepository;
 import com.example.dependencyInjection.service.BookService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,6 +23,9 @@ public class BookController {
 
     @Autowired
     private BookRepository bookRepository;
+
+    @Autowired
+    private BookInventoryRepository bookInventoryRepository;
 
     @GetMapping("{bookId}")
     public Book getBook(@PathVariable Long bookId, HttpServletResponse response) {
@@ -56,7 +61,7 @@ public class BookController {
 
     @DeleteMapping("{bookId}")
     public void deleteBook(@PathVariable Long bookId) {
-
+        bookRepository.deleteById(bookId);
     }
 
     @RequestMapping(method = {RequestMethod.PATCH, RequestMethod.PUT}, path = "{bookId}")
@@ -81,7 +86,22 @@ public class BookController {
             book.setGenre(bookRequest.getGenre());
         }
 
+        if(bookRequest.getAuthorId() != null) {
+            book.setAuthorId(bookRequest.getAuthorId());
+        }
+
         bookRepository.save(book);
         response.setStatus(HttpStatus.NO_CONTENT.value());
+    }
+
+    @PostMapping("{bookId}/inventory")
+    public BookInventory createBookInventory(@PathVariable Long bookId, @RequestBody BookInventory bookInventory) {
+        bookInventory.setBookId(bookId);
+        return bookInventoryRepository.save(bookInventory);
+    }
+
+    @GetMapping("{bookId}/inventory/{bookInventoryId}")
+    public Optional<BookInventory> findBookInventory(@PathVariable Long bookId, @PathVariable Long bookInventoryId) {
+        return bookInventoryRepository.findByIdAndBookId(bookInventoryId, bookId);
     }
 }

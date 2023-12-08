@@ -4,35 +4,22 @@ import jakarta.persistence.*;
 
 import java.util.List;
 
-@Entity(name = "authors")
-public class Author {
+@Entity(name = "users")
+public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     private String name;
 
-    @OneToMany
-    @JoinColumn(name="authorId")
-    private List<Book> books;
-
-    public List<Book> getBooks() {
-        return books;
-    }
-
-    public void setBooks(List<Book> books) {
-        this.books = books;
-    }
-
-    public Author(Long id, String name, List<Book> books) {
+    public User(Long id, String name, List<Book> books) {
         this.id = id;
         this.name = name;
-        this.books = books;
     }
 
-    public Author() {
+    public User() {
     }
 
-    public Author(Long id, String name) {
+    public User(Long id, String name) {
         this.id = id;
         this.name = name;
     }

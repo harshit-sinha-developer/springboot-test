@@ -16,8 +16,8 @@ public class AuthorController {
     private AuthorRepository authorRepository;
 
     @PostMapping("/")
-    public void create(@RequestBody Author author) {
-        authorRepository.save(author);
+    public Author create(@RequestBody Author author) {
+        return authorRepository.save(author);
     }
 
     @GetMapping("/")

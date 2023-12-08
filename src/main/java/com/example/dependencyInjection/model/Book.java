@@ -11,16 +11,14 @@ public class Book {
     private Float price;
     private String genre;
 
-    @ManyToOne
-    @JoinColumn(name = "author_id")
-    private Author author;
+    private Long authorId;
 
-    public Author getAuthor() {
-        return author;
+    public Long getAuthorId() {
+        return authorId;
     }
 
-    public void setAuthor(Author author) {
-        this.author = author;
+    public void setAuthorId(Long authorId) {
+        this.authorId = authorId;
     }
 
     public Book(Long id, String title, Float price, String genre) {
