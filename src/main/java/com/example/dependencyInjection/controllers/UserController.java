@@ -2,6 +2,8 @@ package com.example.dependencyInjection.controllers;
 
 import com.example.dependencyInjection.model.User;
 import com.example.dependencyInjection.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,12 +22,17 @@ public class UserController {
         return userRepository.save(user);
     }
 
+    private static Logger logger = LoggerFactory.getLogger("xxxxx");
+
     @GetMapping("")
     public List<User> findAll() {
         ArrayList<User> users = new ArrayList<>();
         for(User user: userRepository.findAll()) {
             users.add(user);
         }
+
+        logger.info("Fetched users count: " + users.size());
+
         return users;
     }
 

@@ -42,8 +42,45 @@ public class BorrowController {
         BorrowInfo borrowInfo = new BorrowInfo();
         borrowInfo.setBookId(bookId);
         borrowInfo.setUserId(userId);
+        borrowInfo.setStatus("BORROWED");
 
+        bookInventoryRepository.save(bookInventory);
         borrowInfoRepository.save(borrowInfo);
+        return true;
+    }
+
+    @PostMapping("/return-book/{userId}/book/{bookId}")
+    public Boolean returnBook(@PathVariable Long userId, @PathVariable Long bookId, HttpServletResponse response) {
+        Optional<BorrowInfo> optionalBorrowInfo = borrowInfoRepository.findByUserIdAndBookIdAndStatus(userId, bookId, "BORROWED");
+
+        if(optionalBorrowInfo.isEmpty()) {
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            return false;
+        }
+
+        Optional<BookInventory> optionalBookInventory = bookInventoryRepository.findByBookId(bookId);
+
+        if(optionalBookInventory.isEmpty()) {
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            return false;
+        }
+
+        BookInventory bookInventory = optionalBookInventory.get();
+
+
+        if(bookInventory.getAvailableCount().longValue() == bookInventory.getTotalCount().longValue()) {
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            return false;
+        }
+
+        bookInventory.setAvailableCount(bookInventory.getAvailableCount() + 1);
+
+        bookInventoryRepository.save(bookInventory);
+
+        BorrowInfo borrowInfo = optionalBorrowInfo.get();
+        borrowInfo.setStatus("RETURNED");
+        borrowInfoRepository.save(borrowInfo);
+
         return true;
     }
 }
