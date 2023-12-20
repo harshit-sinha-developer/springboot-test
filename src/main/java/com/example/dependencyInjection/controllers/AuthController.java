@@ -3,6 +3,7 @@ package com.example.dependencyInjection.controllers;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.example.dependencyInjection.model.LoginRequest;
+import com.example.dependencyInjection.model.SignupRequest;
 import com.example.dependencyInjection.model.User;
 import com.example.dependencyInjection.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
@@ -29,13 +30,13 @@ public class AuthController {
     private String jwtSecret;
 
     @PostMapping("/signup")
-    public Boolean signup(@RequestBody User userRequest) {
-        String encryptedPassword = BCrypt.hashpw(userRequest.getPassword(), BCrypt.gensalt());
+    public Boolean signup(@RequestBody SignupRequest signupRequest) {
+        String encryptedPassword = BCrypt.hashpw(signupRequest.getPassword(), BCrypt.gensalt());
 
         User user = new User();
-        user.setEmail(userRequest.getEmail());
+        user.setEmail(signupRequest.getEmail());
         user.setPassword(encryptedPassword);
-        user.setName(userRequest.getName());
+        user.setName(signupRequest.getName());
 
         userRepository.save(user);
 

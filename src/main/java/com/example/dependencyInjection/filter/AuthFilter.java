@@ -27,12 +27,15 @@ public class AuthFilter extends OncePerRequestFilter {
     @Value("${app.jwt_secret}")
     private String jwtSecret;
 
-    private static Logger logger = LoggerFactory.getLogger(AuthFilter.class);
+    private static final Logger logger = LoggerFactory.getLogger(AuthFilter.class);
 
-    private static String[] excludedEndpoints = {"/auth", "/ping"};
+    private static final String[] excludedEndpoints = {"/auth", "/ping"};
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        return Arrays.stream(excludedEndpoints).anyMatch(endpoint -> request.getRequestURI().startsWith(endpoint));
+        String requestURI = request.getRequestURI();
+
+        return Arrays.stream(excludedEndpoints).anyMatch(requestURI::startsWith);
     }
 
     @Override
