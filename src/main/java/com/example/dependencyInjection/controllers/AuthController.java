@@ -5,7 +5,10 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.example.dependencyInjection.model.LoginRequest;
 import com.example.dependencyInjection.model.SignupRequest;
 import com.example.dependencyInjection.model.User;
+import com.example.dependencyInjection.model.UserSession;
 import com.example.dependencyInjection.repository.UserRepository;
+import com.example.dependencyInjection.repository.UserSessionRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +31,9 @@ public class AuthController {
 
     @Value("${app.jwt_secret}")
     private String jwtSecret;
+
+    @Autowired
+    private UserSessionRepository userSessionRepository;
 
     @PostMapping("/signup")
     public Boolean signup(@RequestBody SignupRequest signupRequest) {
@@ -55,14 +61,41 @@ public class AuthController {
         User user = optionalUser.get();
 
         if(BCrypt.checkpw(loginRequest.getPassword(), user.getPassword())) {
-            Algorithm algorithm = Algorithm.HMAC256(jwtSecret);
+//            Algorithm algorithm = Algorithm.HMAC256(jwtSecret);
+//
+//            return JWT.create()
+//                    .withClaim("uId", user.getId())
+//                    .withExpiresAt(new Date()) // 48 hours
+//                    .sign(algorithm);
 
-            return JWT.create()
-                    .withClaim("uId", user.getId())
-                    .sign(algorithm);
+            UserSession userSession = new UserSession();
+            userSession.setUserId(user.getId());
+            userSession = userSessionRepository.save(userSession);
+            return userSession.getId();
         }
 
         httpServletResponse.setStatus(HttpStatus.UNAUTHORIZED.value());
         return "failure";
+    }
+
+    @PostMapping("/logout")
+    public void logout(HttpServletRequest request, HttpServletResponse response) {
+        String bearerToken = request.getHeader("Authorization");
+
+        if(bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            return;
+        }
+
+        String token = bearerToken.split(" ")[1];
+
+        Optional<UserSession> optionalUserSession = userSessionRepository.findById(token);
+
+        if(optionalUserSession.isEmpty()) {
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            return;
+        }
+
+        userSessionRepository.delete(optionalUserSession.get());
     }
 }

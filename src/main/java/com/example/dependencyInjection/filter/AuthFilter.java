@@ -6,12 +6,15 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.example.dependencyInjection.model.UserSession;
+import com.example.dependencyInjection.repository.UserSessionRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -20,12 +23,16 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Optional;
 
 @Component
 @Order(2)
 public class AuthFilter extends OncePerRequestFilter {
     @Value("${app.jwt_secret}")
     private String jwtSecret;
+
+    @Autowired
+    private UserSessionRepository userSessionRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(AuthFilter.class);
 
@@ -54,21 +61,13 @@ public class AuthFilter extends OncePerRequestFilter {
 
         String token = bearerToken.split(" ")[1];
 
-        Algorithm algorithm = Algorithm.HMAC256(jwtSecret);
-        JWTVerifier verifier = JWT.require(algorithm).build();
+        Optional<UserSession> optionalUserSession = userSessionRepository.findById(token);
 
-        DecodedJWT decodedJWT = null;
-        try {
-            decodedJWT = verifier.verify(token);
-        } catch (JWTVerificationException ex) {
+        if(optionalUserSession.isEmpty()) {
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             return;
         }
 
-        if(decodedJWT == null) {
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            return;
-        }
         filterChain.doFilter(request, response);
         logger.info("We are exiting Auth filter");
     }

@@ -1,5 +1,6 @@
 package com.example.dependencyInjection.controllers;
 
+import com.example.dependencyInjection.exception.NotFoundException;
 import com.example.dependencyInjection.model.Book;
 import com.example.dependencyInjection.model.BookInventory;
 import com.example.dependencyInjection.repository.BookInventoryRepository;
@@ -32,8 +33,7 @@ public class BookController {
         Optional<Book> optionalBook = bookRepository.findById(bookId);
 
         if(optionalBook.isEmpty()) {
-            response.setStatus(HttpStatus.NOT_FOUND.value());
-            return null;
+            throw new NotFoundException("getBookId", "Book not found.");
         }
 
         return optionalBook.get();
@@ -69,8 +69,7 @@ public class BookController {
         Optional<Book> optionalBook = bookRepository.findById(bookId);
 
         if(optionalBook.isEmpty()) {
-            response.setStatus(HttpStatus.NOT_FOUND.value());
-            return;
+            throw new NotFoundException("updateBookId", "Book not found for updation.");
         }
 
         Book book = optionalBook.get();
