@@ -2,10 +2,8 @@ package com.example.dependencyInjection.controllers;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.example.dependencyInjection.model.LoginRequest;
-import com.example.dependencyInjection.model.SignupRequest;
-import com.example.dependencyInjection.model.User;
-import com.example.dependencyInjection.model.UserSession;
+import com.example.dependencyInjection.exception.AuthenticationException;
+import com.example.dependencyInjection.model.*;
 import com.example.dependencyInjection.repository.UserRepository;
 import com.example.dependencyInjection.repository.UserSessionRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,10 +12,7 @@ import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.Date;
@@ -29,14 +24,12 @@ public class AuthController {
     @Autowired
     private UserRepository userRepository;
 
-    @Value("${app.jwt_secret}")
-    private String jwtSecret;
-
     @Autowired
     private UserSessionRepository userSessionRepository;
 
     @PostMapping("/signup")
-    public Boolean signup(@RequestBody SignupRequest signupRequest) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void signup(@RequestBody SignupRequest signupRequest) {
         String encryptedPassword = BCrypt.hashpw(signupRequest.getPassword(), BCrypt.gensalt());
 
         User user = new User();
@@ -45,46 +38,35 @@ public class AuthController {
         user.setName(signupRequest.getName());
 
         userRepository.save(user);
-
-        return true;
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody LoginRequest loginRequest, HttpServletResponse httpServletResponse) {
+    public LoginResponse login(@RequestBody LoginRequest loginRequest, HttpServletResponse httpServletResponse) {
         Optional<User> optionalUser = userRepository.findByEmail(loginRequest.getEmail());
 
         if(optionalUser.isEmpty()) {
-            httpServletResponse.setStatus(HttpStatus.UNAUTHORIZED.value());
-            return "failure";
+            throw new AuthenticationException("User does not exists.");
         }
 
         User user = optionalUser.get();
 
         if(BCrypt.checkpw(loginRequest.getPassword(), user.getPassword())) {
-//            Algorithm algorithm = Algorithm.HMAC256(jwtSecret);
-//
-//            return JWT.create()
-//                    .withClaim("uId", user.getId())
-//                    .withExpiresAt(new Date()) // 48 hours
-//                    .sign(algorithm);
-
             UserSession userSession = new UserSession();
             userSession.setUserId(user.getId());
             userSession = userSessionRepository.save(userSession);
-            return userSession.getId();
+            return new LoginResponse(userSession.getId());
         }
 
-        httpServletResponse.setStatus(HttpStatus.UNAUTHORIZED.value());
-        return "failure";
+        throw new AuthenticationException("Failed to authenticate the user.");
     }
 
     @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         String bearerToken = request.getHeader("Authorization");
 
         if(bearerToken == null || !bearerToken.startsWith("Bearer ")) {
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            return;
+            throw new AuthenticationException("Bearer token not found.");
         }
 
         String token = bearerToken.split(" ")[1];
@@ -92,8 +74,7 @@ public class AuthController {
         Optional<UserSession> optionalUserSession = userSessionRepository.findById(token);
 
         if(optionalUserSession.isEmpty()) {
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            return;
+            throw new AuthenticationException("Failed to authenticate the user.");
         }
 
         userSessionRepository.delete(optionalUserSession.get());

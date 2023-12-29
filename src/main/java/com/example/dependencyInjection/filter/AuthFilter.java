@@ -1,13 +1,12 @@
 package com.example.dependencyInjection.filter;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTDecodeException;
-import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.auth0.jwt.interfaces.DecodedJWT;
+import com.example.dependencyInjection.exception.ApiException;
+import com.example.dependencyInjection.exception.AuthenticationException;
+import com.example.dependencyInjection.model.ApiError;
 import com.example.dependencyInjection.model.UserSession;
 import com.example.dependencyInjection.repository.UserSessionRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,9 +14,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -28,9 +26,6 @@ import java.util.Optional;
 @Component
 @Order(2)
 public class AuthFilter extends OncePerRequestFilter {
-    @Value("${app.jwt_secret}")
-    private String jwtSecret;
-
     @Autowired
     private UserSessionRepository userSessionRepository;
 
@@ -47,28 +42,39 @@ public class AuthFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
-        logger.info("We are in Auth filter");
-        if(request.getRequestURI().startsWith("/auth")) {
+        try {
+            String token = fetchTokenFromRequest(request);
+
+            Optional<UserSession> optionalUserSession = userSessionRepository.findById(token);
+
+            if (optionalUserSession.isEmpty()) {
+                throw new AuthenticationException("Bearer token not found.");
+            }
+
             filterChain.doFilter(request, response);
-            return;
+        } catch (ApiException apiException) {
+            ApiError apiError = new ApiError(apiException.getMessage(), apiException.getCode());
+            response.setStatus(apiException.getResponseStatus().value());
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.getWriter().write(convertObjectToJson(apiError));
         }
+    }
+
+    private String fetchTokenFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
 
         if(bearerToken == null || !bearerToken.startsWith("Bearer ")) {
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            return;
+            throw new AuthenticationException("Bearer token not found.");
         }
 
-        String token = bearerToken.split(" ")[1];
+        return bearerToken.split(" ")[1];
+    }
 
-        Optional<UserSession> optionalUserSession = userSessionRepository.findById(token);
-
-        if(optionalUserSession.isEmpty()) {
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            return;
+    private String convertObjectToJson(Object object) throws JsonProcessingException {
+        if (object == null) {
+            return null;
         }
-
-        filterChain.doFilter(request, response);
-        logger.info("We are exiting Auth filter");
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.writeValueAsString(object);
     }
 }

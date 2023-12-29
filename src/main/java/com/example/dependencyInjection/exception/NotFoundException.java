@@ -1,18 +1,13 @@
 package com.example.dependencyInjection.exception;
 
-public class NotFoundException extends RuntimeException {
-    private String code;
+import org.springframework.http.HttpStatus;
+
+public class NotFoundException extends ApiException {
+    public NotFoundException(String message) {
+        super("resource_not_found", message, HttpStatus.NOT_FOUND);
+    }
 
     public NotFoundException(String code, String message) {
-        super(message);
-        this.code = code;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
+        super(code, message, HttpStatus.NOT_FOUND);
     }
 }
