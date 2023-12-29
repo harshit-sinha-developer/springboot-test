@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping(path = {"/book/"})
+@RequestMapping(path = {"/book"})
 public class BookController {
     @Autowired
     private BookService bookService;
@@ -28,7 +28,7 @@ public class BookController {
     @Autowired
     private BookInventoryRepository bookInventoryRepository;
 
-    @GetMapping("{bookId}")
+    @GetMapping("/{bookId}")
     public Book getBook(@PathVariable Long bookId, HttpServletResponse response) {
         Optional<Book> optionalBook = bookRepository.findById(bookId);
 
@@ -39,7 +39,7 @@ public class BookController {
         return optionalBook.get();
     }
 
-    @GetMapping("/")
+    @GetMapping("")
     public List<Book> getBooks(@RequestParam @Nullable String genre) {
             ArrayList<Book> books = new ArrayList<>();
 
@@ -53,18 +53,18 @@ public class BookController {
         return books;
     }
 
-    @PostMapping("/")
+    @PostMapping("")
     public Book createBook(@RequestBody Book bookRequest) {
         Book book = new Book(bookRequest.getTitle(), bookRequest.getPrice(), bookRequest.getGenre());
         return bookRepository.save(book);
     }
 
-    @DeleteMapping("{bookId}")
+    @DeleteMapping("/{bookId}")
     public void deleteBook(@PathVariable Long bookId) {
         bookRepository.deleteById(bookId);
     }
 
-    @RequestMapping(method = {RequestMethod.PATCH, RequestMethod.PUT}, path = "{bookId}")
+    @RequestMapping(method = {RequestMethod.PATCH, RequestMethod.PUT}, path = "/{bookId}")
     public void updateBook(@PathVariable Long bookId, @RequestBody Book bookRequest, HttpServletResponse response) {
         Optional<Book> optionalBook = bookRepository.findById(bookId);
 
@@ -93,13 +93,13 @@ public class BookController {
         response.setStatus(HttpStatus.NO_CONTENT.value());
     }
 
-    @PostMapping("{bookId}/inventory")
+    @PostMapping("/{bookId}/inventory")
     public BookInventory createBookInventory(@PathVariable Long bookId, @RequestBody BookInventory bookInventory) {
         bookInventory.setBookId(bookId);
         return bookInventoryRepository.save(bookInventory);
     }
 
-    @GetMapping("{bookId}/inventory/{bookInventoryId}")
+    @GetMapping("/{bookId}/inventory/{bookInventoryId}")
     public Optional<BookInventory> findBookInventory(@PathVariable Long bookId, @PathVariable Long bookInventoryId) {
         return bookInventoryRepository.findByIdAndBookId(bookInventoryId, bookId);
     }
