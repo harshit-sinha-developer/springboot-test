@@ -1,7 +1,5 @@
 package com.example.dependencyInjection.controllers;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.example.dependencyInjection.exception.AuthenticationException;
 import com.example.dependencyInjection.model.*;
 import com.example.dependencyInjection.repository.UserRepository;
@@ -10,12 +8,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
-import java.util.Date;
 import java.util.Optional;
 
 @RestController

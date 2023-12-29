@@ -1,7 +1,6 @@
 package com.example.dependencyInjection.controllers;
 
 import com.example.dependencyInjection.model.Author;
-import com.example.dependencyInjection.model.Book;
 import com.example.dependencyInjection.repository.AuthorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
